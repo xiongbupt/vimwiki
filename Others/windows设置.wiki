@@ -1,0 +1,7 @@
+=windows常用设置=
+latex更新字体缓存：initexmf -u
+windows的cmd窗口更改为utf8编码：chcp 65001
+windows的cmd窗口更改为gbk编码：chcp 936 
+
+=win7右键打开方式修改=
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.MP3\OpenWithList

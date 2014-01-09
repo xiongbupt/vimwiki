@@ -1,0 +1,52 @@
+==入门==
+每一个MyBatis对象都是以一个SqlSessionFactory对象的实例为核心，该示例可以通过SqlSessionFactoryBuilder获得，SqlSessionFactoryBuilder可以通过XML配置文件获取。
+===XML配置文件示例===
+{{{class="brush:xml"
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${username}"/>
+                <property name="password" value="${password}"/>
+            </dataSource>
+        </environment>
+    </environments> 
+    <mappers>
+        <mapper resource="org/mybatis/example/BlogMapper.xml"/>
+    </mappers>
+</configuration>
+  }}}
+environment元素体中包含对事务管理和连接池的环境配置。mappers元素是包含所有mapper（映射器） 的列表，这些mapper的XML文件包含SQL代码和映射定义信息。
+
+== MyBatis的XML配置文件 ==
+XML文件的整体构成如下所示:
+* configuration配置
+    * properties属性
+    * settings设置
+    * typeAliases 类型命名
+    * typeHandlers 类型处理器
+    * objectFactory 对象工厂
+    * plugings 插件
+    * environments 环境
+        * environment 环境变量
+        * transactionManager 事务管理器
+        * dataSource 数据源
+    * 映射器
+
+== SQL映射的XML文件 ==
+SQL映射文件的几个顶级元素:
+* cache 配置给定命名空间的缓存。
+* cache-ref 从其他命名空间引用缓存配置。
+* resultMap 用来描述如何从数据库结果集中加载需要的对象。
+* parameterMap 已被抛弃。
+* sql 可以重用的SQL语句。
+* insert 映射插入语句。
+* update 映射更新语句。
+* delete 映射删除语句。
+* select 映射查询语句。

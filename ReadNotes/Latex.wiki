@@ -1,0 +1,15 @@
+%title Latex读书笔记
+=Latex插图指南=
+
+eps格式的图形的插入的关键之处在于确定图形的大小，在eps文件的开始几行的地方会标明图片的左下角和右上角的坐标，利用该坐标便可以确定图片的大小。在eps中，每个坐标表示1/72英寸。
+
+将jpeg图片转换为eps图片可以使用latex自带的bmeps命令即可。
+
+=Latex Tutorial=
+Bibliographic database
+
+以.bib为后缀结尾，在文章中若需要引用，则输入
+
+\bibliography{database1,database2}
+
+来完成对应的引入机制。

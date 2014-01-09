@@ -1,0 +1,9 @@
+﻿%title Linux内核修炼之道精华版
+在grub文件中的kernel行中，可以对模块的参数进行配置，其相关的对应关系如下所示：
+modprobe usbcore autosuspend=2 对应
+usbcore.autosuspend=2
+
+对于模块支持的可选参数，可以使用modinfo -p $(module_name)来查看。
+
+对于已经加载到内核的模块，通过查看/sys/module/$(module_name)/parameters目录下面可以看到该模块支持的可选参数。通过使用
+"echo -n $(value) > /sys/module/$(module_name)/parameters/${}parm}"这样的命令进行修改。

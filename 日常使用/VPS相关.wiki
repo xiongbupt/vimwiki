@@ -1,0 +1,103 @@
+%toc
+=VPS相关=
+==centos相关设置==
+===centos查看系统版本===
+{{{
+rpm -q centos-release
+  }}}
+
+===启用ssh无密码登录===
+`ssh-keygen -t dsa`此命令用来产生本地的密钥和公钥，在centos上应该可以去除。
+
+* 生成密钥。
+首先在客户端生成密钥，将产生的公钥传输到centos服务器上，然后将客户端的公钥添加到服务器的.``ssh/authorized_keys`文件中即可。当该文件中存在多个密钥时，可以使用`cat`来完成相应的添加步骤即可。
+* 修改`/etc/ssh/sshd_config`全局配置文件。
+由于sshd的全局配置文件位于`/etc/ssh`文件夹下，需要对关爱配置文件进行若干修改，以便于启用使用密钥的方式进行登陆，而不是使用密码的方式进行登陆。通过此方法也可以禁用密码登陆，防止有人暴力破解ssh密码的登陆方式。
+具体的修改方式如下所示：
+{{{
+#AuthorizedKeysFile      .ssh/authorized_keys
+AuthorizedKeysFile      .ssh/authorized_keys #此处用于指定授权公钥文件所处的位置，由步骤1中所生成的密钥决定。
+#PasswordAuthentication yes
+PasswordAuthentication no #此处用于禁止密码登录
+#ChallengeResponseAuthentication yes
+ChallengeResponseAuthentication no
+}}}
+修改完上述三处配置文件之后，便已经完成了基本配置，接下来需要重启`sshd`服务，以便使配置生效。
+* centos重启sshd。
+通过输入`service sshd restart`即可重启ssh服务。
+由于ssh的默认端口为22，可以通过修改`/etc/ssh/sshd_config`配置文件中的内容`Port`来指定需要开启的端口。
+
+===ppptp安装及设置===
+budgetvm的默认ppp没有开启，需要在控制面板中打开tun和ppp。使用cat /dev/ppp可以查看状态，当为no such device时则已经开启，当为
+* 安装ppp软件，（默认iptables已经安装好）。`yum install ppp`。
+* 安装pptpd服务器。
+首先下载pptpd服务器，使用下面的命令下载即可。`wget http://poptop.sourceforge.net/yum/stable/rhel6/x86_64/pptpd-1.4.0-1.el6.x86_64.rpm`，注意ppp版本与pptpd版本需要一致，若不一致后续的安装可能会报错。
+下载完成的rpm包可以使用`rpm -ivh package_name.rpm`的方式来进行安装，在下载的完成的目录中输入上述命令即可完成pptpd的安装。
+* pptpd配置。
+修改/etc/ppp目录下的options.pptp文件，此部分主要是设置服务名称、加密方式、DNS等相关属性，修改后的效果如下所示：
+{{{
+name pptpd
+refuse-pap
+refuse-chap
+refuse-mschap
+require-mschap-v2
+require-mppe-128
+proxyarp
+lock
+nobsdcomp
+novj
+novjccomp
+nologfd
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4
+  }}}
+
+在/etc/ppp目录下新建`pptpd.conf`文件，由于pptpd启动时需要指定配置文件，在启动时指定此文件即可，文件中内容如下所示：
+{{{
+option /etc/ppp/options.pptp    #配置文件所处路径
+localip 172.16.36.1             #pptp服务器端口本地ip地址
+remoteip 172.16.36.2-254        #pptp客户端连接的ip地址
+  }}}
+  
+修改/etc/ppp目录下的`chap-secrets`文件，该文件为连接vpn时的密码，使用明文的方式存储，格式如下所示：
+{{{
+# Secrets for authentication using CHAP
+# client	server	secret			IP addresses
+#client_name server_name(pptpd) password     client_from_Address
+#示例如下，此用户名为test，密码为12345678，可以从任意ip地址连接到本vpn
+test    pptpd   12345678    *
+  }}}
+
+* 启用iptables的转发。
+以下为在命令行中输入的内容，其中以`#`开头的未在命令行中输入的内容，直接以内容开头的为vim在文本文件中编辑的内容，`##`开头的为注释
+{{{
+#echo 1 > /proc/sys/net/ipv4/ip_forward
+#vim /etc/sysctl.conf
+net.ipv4.ip_forward = 1
+
+#iptables -F
+#iptables -t nat -A POSTROUTING -s 172.16.36.0/24 -j SNAT --to-source xx.xx.xx.xx
+##上一行中的xx.xx.xx.xx为VPS的连接地址，即VPS的外网地址
+
+#service iptables save
+##保存iptables的相关配置，此处仅仅只是做了一个简单的转发。
+
+#service pptpd restart
+#service iptables restart
+##重启iptables以及pptpd服务
+
+#chkconfig pptpd on
+#chkconfig iptables on
+##将iptables以及pptpd设置为开机启动
+}}}
+
+完成上述操作之后，即可以在windows端正常的使用pptp的方式进行网络连接。
+windows端的具体设置可参见下图。
+
+{{../Images/windows-pptp.png}}
+
+
+===日常操作===
+cat /var/log/messages可以用来查看日志
+
+%title Centos相关设置

@@ -1,0 +1,54 @@
+==Arch安装系统记录==
+* 首先输入`dhcpcd enp8s0`获取ip地址。此步骤为在路由器下通过有线网络获取ip地址，~无线网卡的获取方式后续待补充~。通过输入wifi-menu可以完成无线网络的配置，想当年自己还是通过wpa_supplicant命令来完成无线网络的配置，现在都做的这么人性化了，arch现在是越来越出色了，不得不赞一把。
+* 硬盘分区可以采用`gpdisk`来完成，采用uefi的方式，具体的分区方案自行选择就可以。本人的分区方式如下：
+        boot 300M
+        swap 2G
+        var 80G
+        /    100G
+        /home 200G 
+        swap分区设置：mkswap /dev/sda2, swapon
+
+* 将根分区挂载至/mnt下，同时将其他的分区挂载至/mnt目录下的对应目录下（需要在/mnt目录下创建对应的目录，使用`mkdir`命令即可）
+
+* 修改`/etc/pacman.d/mirrorlist`文件。主要是为了更快的获取源，修改为中科大http://mirrors.ustc.edu.cn/archlinux/ 的镜像，貌似速度在北京联通的网络下还不错。
+* 在修改完上述镜像地址之后，便可以使用`pacman -Syy`来更新对应的源，接下来使用`pacstrap /mnt base`将基本的包安装至`/mnt`目录下即可。
+* `genfstab -p /mnt >> /mnt/etc/fstab`，使用此命令来完成文件系统文件的生成，不需要再编辑fstab文件来完成对应分区的挂载。
+* `arch-chroot /mnt`，完成切换。此命令可以切换至/mnt目录下，在该命令之后的操作均是基于日后的系统来完成的，不再是基于之前的u盘启动中的内存中的系统进行操作了。
+* 在这个步骤之后，还是先把vim给装上，vi实在有点用不习惯。`pacman -S vim` 此步骤即可完成vim的安装了，后面就是对系统进行配置了。后续的修改都是使用vim作为编辑器进行修改编辑了。
+* 修改hostname,直接在`/etc/hostname`文件中写入自己的主机名称即可。该文件需要新建。
+* 修改时区设置。`ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime`,直接输入上述命令，将本机的时区设置为对应时区即可，此处使用的是Shanghai。
+* 修改`/etc/locale.gen`文件，用来生成对应的字体的编码，直接vim进去，搜索zh,将常用的zh-cn相关的给选上，比如zh_CN.UTF-8,zh_CN.GBK....，还得记得选个英文了，en_US.UTF-8就可以了。修改完成之后，使用locale-gen来完成对应配置文件的生成。
+* 编辑`/etc/locale.conf`文件，该文件默认没有，可以使用`locale >> /etc/locale.conf`来生成。此处先把系统安装上，后续装输入法的时，再对此文件进行修改。此处先采用默认的，使用的区域为en_US.
+* 镜像文件的生成。使用`mkinitcpio -p linux`来完成镜像文件的生成即可。
+* 修改root的密码。使用`passwd`来完成密码的修改即可。
+* 网络设置。由于之前一直用的是netctl,感觉用上去還不錯，这次就继续用这个，首先将其安装`pacman -S netctl`，通过此命令完成安装。仅仅需要安装一个包就可以，没有依赖，感觉很不错。安装完netctl之后，在`/etc/netctl/examples`目录下有很多常用的连接选项。目前一般都是wpa加密，直接按照wiki上讲的，使用下面的方式拷贝一份出来即可`cp /etc/netctl/examples/wireless-wpa /etc/netctl/profile`，接下来就是对这个`profile`文件根据自己的实际情况修改修改就可以。简单又方便。修改完成之后，后面需要使用的时候，直接`netctl start profile`就可以启动这个配置的无线网络了，如果需要开机自动连接该网络，可以使用`netctl enable profile`即可。注意在使用wpa加密方式时，还需要使用`pacman -S wpa_supplicant`完成wpa_supplicant的安装，否则后续无法完成无线网络的连入。
+* 安装bootloader.终于到最后一步了，完成这个步骤之后，重启机器，arch应该就可以正常的启动而不再需要u盘了，后面的操作也就是根据自己的需要来完成软件的安装与配置。记录下bootloader的安装。有很多bootlader可以选择，还是选择自己以前一直用的grub来作为bootloader.貌似自己一旦选定了某种软件，后续更换的可能性就很小了。简单的记录下grub的安装。
+ 
+之前以为这一步骤很简单，结果折腾的最久，详细记录下。主要还是自己没有仔细的阅读wiki,没有正确的理解UEFI和GPT的关系，瞎折腾了很久。
+
+由于自己的本不是UEFI的，只是自己把硬盘给分成了GPT格式，ef00是UEFI所对应的分区，而在bios上使用GPT的方式，需要的是一个EF02对应的分区，之前没有正确的添加该分区，导致出错，重来了前面的步骤。
+
+简单记录如下：
+首先在gdisk中，需要留出一块分区给EF02格式的分区，该分区的大小按照[[https://wiki.archlinux.org/index.php/GRUB#GUID_Partition_Table_.28GPT.29_specific_instructions|arch wiki]]中的说明为1007Kb,随便给分个几M应该就可以了。具体的操作可以按照[[http://www.gnu.org/software/grub/manual/html_node/BIOS-installation.html|GPT分区操作]]中所提到的，使用`parted /dev/disk set 所指定的ef02分区所属号码 -number bios_grub on`来完成设置。
+
+在完成上述操作之后，就可以正常的安装了，但是在按照[[https://wiki.archlinux.org/index.php/GRUB#GUID_Partition_Table_.28GPT.29_specific_instructions|Arch wiki Grub]]中的说明中使用`grub-mkconfig -o /boot/grub/grub.cfg`来完成配置时，报错，错误信息为`error: out of memory.  error: syntax error error: Incorrect command`，按照[[https://bbs.archlinux.org/viewtopic.php?pid=1357811|Arch Forum]]中提到的方法，在`/etc/default/grub`中 *添加* `GRUB_DISABLE_SUBMENU=y`解决该问题。
+
+接下来的安装便是使用`grub-install --target=i386-pc --recheck --debug /dev/sda`和`grub-mkconfig -o /boot/grub/grub.cfg`来完成即可。
+
+完成上述所有操作之后，`reboot`之后，arch便已经可以正常启动了，接下来便是具体软件的安装与配置了。
+
+== Arch基本软件安装及配置 ==
+git 版本控制软件，自己平时写写文档，写写小代码，肯定可以用得到，安装很简单，`pacman -S git`,安装完成之后，只需要配置下简单的所写命令即可。自己常用的配置如下：
+        git config --global alias.ci commit
+        git config --global alias.co checkout
+        git config --globla alias.st status
+git status中文乱码解决方案：
+放狗搜索之后，搜索到
+[[http://blog.crhan.com/2012/09/git-status-%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81%E8%A7%A3%E5%86%B3/|git
+中文乱码]]通过设置`git config --global core.quotepath false`即可解决。
+=== 图形界面安装及设置 ===
+安装Xorg-server、xfce4以及驱动即可，安装完成之后，使用startxfce4即可启动图形界面。（之前还以为挺复杂的，貌似现在是越来越方便了）
+
+但是打开的界面的字体真是没法看，安装上一些常用的字体。
+
+

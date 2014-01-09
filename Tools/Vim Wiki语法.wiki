@@ -1,0 +1,245 @@
+=Vim Wiki=
+==简介==
+vimwiki是一种简单的用于组织记录的笔记方式。在默认情况下，输入`\ww`即可进入到编辑界面进行简单的编辑。
+
+默认在一个词上敲击两次回车则将该词变为超链接的形式，通过使用visual模式可以将多个词选为一个词条进行编辑。
+==依赖==
+在vimrc中需要设置的选项如下:
+{{{
+set nocompatible
+filetype plugin on
+syntax on
+  }}}
+==映射==
+存在全局映射和局部映射。
+===全局映射===
+* `<leader>ww`打开wiki的首页。可以有多个不同的wiki，在其前面添加数字即可打开指定的wiki首页。
+* `<leader>wt`在新的tab页中打开wiki.
+* `<leader>ws`列出可以选择的wiki.
+* `<leader>wi`打开日记的首页。
+* `<leader>w<leader>w`在当前的wiki页中新建或者打开当日的日记。
+* `<leader>w<leader>t`在新的tab页中打开日记。
+===局部映射===
+在Normal模式下:
+* `<leader>wh`将当前页面转为html形式。
+* `<leader>whh`将当前页转换成为html并且在浏览器中打开。
+* `<leader>w<leader>i`删除旧的日记，插入新的日记。
+* `CR(回车)`在需要的情况下创建新的词条。
+* `S-CR`水平分割并创建词条。
+* `V-CR`垂直分割并创建词条。
+* `Backspace`返回上一个wiki页面。
+* `tab`寻找本页面的下一个跳转链接。
+* `S-tab`寻找本页面的前一个链接。
+* `<leader>wd`删除当前的wiki页面。
+* `<leader>wr`对当前的wiki页面重命名。
+* `<C-SPACE>`切换todo任务的状态。
+* `=`添加标题的级别
+* `-`减小标题的级别
+* `+`添加链接。
+* `glm`增加列表缩进
+* `gll`减小列表缩进
+* `gl*`或者`gl8`变换或添加一个`*`。
+* `gl#`或者`gl3`变换或添加一个`#`。
+* `<A-Left>`表格中的当前列左移。
+* `<A-Right>`表格中的当前列右移。
+* `<C-UP>`打开前一日的日记。
+* `<C-Down>`打开后一日的日记。
+
+在插入模式下:
+* `<CR>`
+* `<TAB>`下一个单元，若已经为最后则新建一行。
+
+==文本对象==
+* `ah` 包括换行的一个区域段落
+* `ih` 不包括空行的一个区域
+可以通过使用`vah`来选择一个区域段落
+* `a\` 表中的一个单元格
+* `i\` 表中的一个内部单元格
+* `ac` 表中的一列
+* `ic` 表中的一个内部列
+
+==命令==
+=== 全局命令 ===
+* `:VimwikiIndex` 打开当前wiki的index页面
+* `:VimwikiTabIndex` 在新建tab页中打开当前wiki的index页面
+* `:VimwikiUISelect` 打开所选择的WIki的index文件
+* `:VimwikiDiaryIndex` 打开当前wiki的日记index文件
+* `:VimwikiMakeDiaryNote` 在当前wiki页面中打开当日的wiki文件
+* `:VimwikiTabMakeDiaryNote`在新建Tab页中打开当日的wiki文件
+=== 本地命令 ===
+* `:VimwikiFollowLink` 进入wiki链接，若页面不存在则创建
+* `:VimwikiGoBackLink` 返回wiki的上一页面
+* `:VimwikiSplitLink` 分区并跳转页面链接，若页面不存在则创建页面
+* `:VimwikiVSplitLink` 垂直分割并跳转至页面链接，链接不存在则创建页面
+* `:VimwikiTabnewLink` 在新建tab页面中打开链接
+* `:VimwikiNextLink` 在当前页面中查找下一链接
+* `:VimwikiPrevLink` 在当前页面中查找前一链接
+* `:VimwikiGoto` 跳转至参数指定的链接，如VimwikiGoto HelloWorld则会跳转或新建HelloWorld页面。
+* `:VimwikiDeleteLink`删除目前所处的wiki页面
+* `:VimwikiRenameLink` 重命令当前所处的wiki页面
+* `:Vimwiki2HTML` 将当前的wiki页面转为html页面
+* `:Vimwiki2HTMLBrowse` 将当前页面转为html页面并在浏览器中打开
+* `:VimwikiAll2HTML` 将所有的wiki页面转为html,若无css文件则会创建默认的。
+* `:VimwikiToggleListItem` 重新打开或关闭代办条目
+* `:VimwikiListChangeLevel` CMD 更改代办条目的级别
+* `:VimwikiSearch /pattern/` 在当前wiki类别的所有文件中查找`pattern`内容
+* `:VimwikiBackLinks` 在当前wiki类别的所有文件中查找所有链接
+* `:VimwikiTable` 创建一个5列2行的表格，`:VimwikiTable cols rows`指定行列，`:VimwikiTable cols`指定列数，行数为2
+* `:VimwikiTableMoveColumnLeft`当前列向左移动
+* `:VimwikiTableMoveColumnRight`当前列向右移动
+* `:VimwikiGenerateLinks`在当前buffer中插入所有可用的链接
+* `:VimwikiDiaryGenerateLinks` 在日记的index页面中删除旧的区域并插入新的区域
+* `:VimwikiDiaryNextDay` 若存在则打开下一日的日记链接
+* `:VimwikiDiaryPrevDay` 若存在则打开上一日的日记链接
+== Wiki语法 ==
+目前存在若干中wiki系统，各自均有各自的语法，vimwiki也有自身的语法。
+
+vimwiki与google的标记语言非常类似，但进行了扩展。
+
+Vimwiki在很大程度上同时也支持其他的语法格式，例如markdown和mediawiki.可以找到syntax/vimwiki_xxx.vim类似的文件，这些语法文件都定义了自身的高亮原则。
+
+目前Vimwiki仅仅支持Markdown的标记语言。
+
+Vimwiki2HTML目前仅仅针对默认的语法有效。
+=== 字体 ===
+下面是几种常用的的字体:
+{{{
+*粗体*
+_斜体_
+~~删除线~~
+`代码文本(无语法)`
+上标^上标^
+下标,,下标,,
+  }}}
+具体效果如下所示:
+*粗体*
+_斜体_
+~~删除线~~
+`代码文本(无语法)`
+上标^上标^
+下标,,下标,,
+
+=== 超链接 ===
+* Wiki链接
+{{{
+[[wiki链接]]
+[[wiki链接|wiki的描述]]
+[[/home/somebody|本地链接]]
+  }}}
+  通过设置`g:vimwiki_dir_link`可以控制打开文件夹的行为
+[[wiki链接]]
+[[wiki链接|wiki的描述]]
+[[/home/somebody|本地链接]]
+
+* 原始链接
+Vimwiki也支持原始链接，如下所示:
+{{{
+http://www.google.com
+mailto:test@gmail.com
+ftp://vim.org
+  }}}
+http://www.google.com
+mailto:test@gmail.com
+ftp://vim.org
+
+* Markdown语法链接
+这些链接仅仅只是针对Markdown语法有效。
+
+内部链接
+{{{
+[链接描述](实际的URL地址)
+}}}
+[链接描述](实际的URL地址)
+
+图片链接
+{{{
+![图片显示](图片的地址)
+}}}
+![图片显示](图片的地址)
+
+=== 标题头部 ===
+{{{
+= 一级标题 =
+== 二级标题 ==
+=== 三级标题 ===
+==== 四级标题 ====
+===== 五级标题 =====
+====== 六级标题 ======
+  }}}
+具体的效果如下所示:
+= 一级标题 =
+== 二级标题 ==
+=== 三级标题 ===
+==== 四级标题 ====
+===== 五级标题 =====
+====== 六级标题 ======
+     
+通过在第一个=之前添加空格的方法，可以使标题居中对齐，如下所示:
+ ====== 标题居中测试 ======
+
+=== 段落 ===
+段落从首列开始，段落之间通过空行区分。
+
+=== 列表 ===
+* 无序列表
+通过使用`*`来表示，如下所示:
+{{{
+  * 条目1
+  * 条目2
+    * 子条目1
+    * 子条目2
+      * 详细说明
+      * ...
+    * 子条目3
+}}}
+或者使用`-`来表示，如下所示
+{{{
+  - 条目1
+  - 条目2
+    - 子条目1
+    - 子条目2
+      - 详细说明
+      - ...
+    - 子条目3
+}}}
+或者使用两者的混合表示，如下所示:
+{{{
+  - 条目1
+  - 条目2
+    * 子条目1
+    * 子条目2
+      - 详细说明
+      - ...
+    - 子条目3
+}}}
+这三种表示方式的效果一致，具体效果如下所示:
+- 条目1
+- 条目2
+  * 子条目1
+  * 子条目2
+    - 详细说明
+    - ...
+  - 子条目3
+  
+* 有序列表
+有序列表通过使用`#`来标志各个条目。
+
+有序列表和无序列表可以混合使用，通过使用指定的标记进行表示即可。
+
+=== 表格 ===
+表格的单元格之间通过使用`|`完成分割，在表格中可以插入其他的wiki语法，如字体等。
+
+表格的头部在html页面中将会根据设置的色调进行修饰。
+
+若在表格中使用`>`，则会将左列进行扩展;若使用`\/`则会将上一个单元格与本单元格合并，如
+{{{
+ | a  | b  | c | d |
+ | \/ | e  | > | f |
+ | \/ | \/ | > | g |
+ | h  | >  | > | > |
+  }}}
+最终生成的表格效果如下所示:
+| a  | b  | c | d |
+| \/ | e  | > | f |
+| \/ | \/ | > | g |
+| h  | >  | > | > |

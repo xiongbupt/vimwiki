@@ -1,0 +1,42 @@
+=Oracle教程=
+==查询基础==
+查询结果排序  order by asc(desc) 
+比较运算符  > <    (!= or <>) between and 
+==单行函数==
+===字符函数===
+Upper 大写
+lower 小写
+Initcap 第一个字母大写
+Concat 字符串连接
+Substr 字符串连接
+Length 字符串长度
+Replace(oring_string,'replaced','new') 字符串替换
+Instr(checked_string,'searched_string')
+字符位置查找，可以是字符串，返回值为第一次出现的位置
+Lpad Rpad，左填充和右填充，Lpad('String',number,'填充字符串')
+Trim(' string '),去除字符串的前后空白
+===数值函数===
+round(number,
+        bit),bit为精度类型，负数表示小数点左侧的精度，为第几位的精度值，四舍五入的方式。
+Mod(number,model)，取余操作
+trunc(number,bit)，与round类似，但是采取的是舍去的操作。
+===日期函数===
+Months_between() 
+add_month()
+add_day()
+
+==高级查找==
+select ename,sal,sum(sal) over(), sum(sal) over(order by ename) from
+scott.emp; 
+sum(sal) over()  直接求和
+sum(sal) over(order by ename)
+    连续求和，按照递增的顺序对对应的sal列进行求和操作。
+==数据字典==
+* 查询某用户下所有表 
+select table_name from all_tables where owner='username'
+* 查询某个表中的所有字段
+select * from all_tab_columns where tab_name='table_name'
+* 列出表的索引列
+select * from sys.all_ind_columns where table_name='EMP';
+* 列出表中约束
+select * from all_constraints where table_name='EMP';

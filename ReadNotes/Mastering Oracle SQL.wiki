@@ -1,0 +1,151 @@
+%toc
+=Mastering Oracle SQL=
+数据库中的两种语言：
+DDL（Data Definition Language） Insert、Update、Select、 Delete、Merge 
+DML（Data Manipulation Language） Create、Alter、  Drop、Truncate 
+DCL 语句（数据控制语言）Grant、Revoke 
+
+DML中的五种操作包括
+select
+insert
+delete
+update
+merge
+
+==五大语句==
+* select语句
+对select的结果进行排序，在where条件后面添加order
+by进行排序，排序的变量可以有多个，变量之间使用逗号分隔。或者在里面使用第几列来排序，如使用order
+by 1等，使用相应的列来进行排序。
+
+使用distinct关键字可以对删除重复的记录。
+
+查看表的结构describe +tablename
+
+* insert语句
+insert插入语句中，对应的值可以使用select语句从其他表中获取。
+
+在多个表中同时插入数据：
+    insert all into table(columns,) values (value)
+    into table(columns,) values(value)
+    
+在表中条件插入的方式：
+    insert First
+    when (condition) then
+    into table(columns) values (value)
+    when (condition) then
+    into table(columns) values (value)
+    
+    First字段表示的是在匹配了其中的任意一个条件之后，便跳出该循环，继续下面的操作。当使用的是ALL时，则会对条件一个一个的进行判断匹配。
+    
+* delete语句
+与select语句类似，在where中添加相应的条件。当需要指定需要删除的列数时，可以使用rownum变量来指定对应需要删除的列。
+
+* update语句
+与delete语句类似，在where中添加相应的条件即可。也可以使用子查询来填充需要的值。
+
+* merge语句
+判断完条件之后，针对记录的有无使用update或者insert操作来完成数据的更新或者插入操作。
+
+==查询条件==
+where语句由不同的变量以及一个或者多个操作符连接起来，变量的组成包括：数字、数据库中的列、字符、函数、表达式组成的列表、子查询等，对应的操作符包括数学运算符，如+，-，*，/以及比较运算符如>，<，=，!=，like，in等。
+
+in关键字用来指明记录存在在对应的记录的集合中。
+
+between用于指定查询的范围。
+注意X between Y and Z的含义为X>=Y AND X <=Z
+
+like关键字可以用来实现匹配功能，%用来匹配任意字符，_用来匹配一个字符
+
+oracle中使用正则表达式的方式REGEXP_LIKE(name,'^W([^L]*)ies$')
+REGEXP_LIKE，使用正则表达式的方式的关键字。
+
+==Join连接==
+select * from table1 join table2 on table1.column1=table2.column2
+默认为Inner Join
+
+Cross Join产生的是笛卡尔积，一般很少用，在使用Cross Join时，没有条件ON
+
+Outer
+Join外连接。分为左外连接和右外连接以及全外连接。这几种不同的情况用于不同的场景中，在左外连接和右连接中，两者的区别当调换表的顺序之后，便是完全等同的。下面举例对左外连接进行说明。
+如下面的SQL语句：
+select table1.value, table2.value
+from table1 left outer join table2
+on table1.num = table2.num
+这个语句首先会将table1中与table2中的value值均列出来，但是当table2中没有相应的num对应时，也将会把talbe1中的value列出来，将table2的value列置为空。
+上面的语句也可以写为下面的表达方式：
+select table1.value, table2.value
+from table1,table2
+where table1.num = table2.num(+)
+
+
+==组合操作==
+四种组合操作，分别是：
+* UNION
+* UNION ALL
+* MINUS
+* INTERSECT
+
+这四个操作没有优先级的区分，在ISO中，INTERSECT的优先级要高于其他，但是在oracle中没有区别。当需要先后执行这几种不同的组合操作时，需要使用括号来区分优先级。
+
+多个查询进行组合操作时，列数必须一致。在产生最后的表的别名时，依据的是第一个select语句进行的设置。使用order
+by语句时，应该使用的是第一个select中的产生的列的别名，不能使用其他语句的select中的列名。
+
+==分层查询==
+Oracle提供了语句来遍历层次型的数据，这三类操作符分别是：
+* Start with …… Connect by
+* Prior
+* LEVEL
+
+在这三类语句中，均是放置在FROM语句之后，在Where子句中，如下面这个例子：
+select level, column1, column2
+from table
+start with column1 is null
+connect by prior column2 = column1
+
+在上面这个语句中，根节点是column1的值为NULL的节点，父节点与子节点的关系是父节点所在行的column2列所对应的值是子节点的column1所在的行所对应的值。level值是oracle中提供的，根据节点所在层次所产生的值，当节点所在的层次增加时，该值相应的增加。prior关键字表明该列是父节点所在的列值，其可以放在‘=’之前，也可以放在‘=’之后。
+
+WHERE子句必须在Start with之前出现，可是还是先使用Start
+with子句构建成树之后，再使用Where子句对相关的记录进行过滤。
+
+虽然Start
+with子句是可选的，但是如果不添加该子句，将会返回每个节点作为根节点时，所构成的树的记录。因此在实际使用中，Start
+with应该是一个不可缺少的记录。
+
+ORDER SIBLINGS BY lname 保持层次的同时根据相应的列进行排序。
+
+在Oracle
+10g之后，针对层次型数据的查找，提供了新的技术。比如NOCYCLE，可以消除在层次型数据库中的环操作。其具体使用位置位于CONNECT
+BY语句之后，如下所示：
+Start with ...
+Connect by nocycle prior ...
+
+在使用了nocycle关键字之后，可以使用CONNECT_BY_ISCYCLE关键字来判断是否有环，若有环，在该值返回为1，否则返回为0。
+
+判断一行是否是叶子节点，可以使用CONNECT_BY_ISLEAF来进行判断。若节点是叶子节点，则返回1，否则返回0。
+
+==Decode与Case操作==
+DECODE 编码操作。将相应的输出进行编码之后再输出，最多的参数个数为256。
+
+NULLIF(co1,co2)相当于DECODE(co1,co2,NULL,co1)，即如果co1和co2的条件相等，则返回NULL；否则返回co1。
+
+NVL和NVL2函数，这两个函数主要是用来针对值为NULL时采用的操作。在NVL中，只有两个函数参数，而在NVL2函数中，则有三个参数。
+
+搜索式的CASE语句：
+CASE
+  WHEN C1 THEN R1
+  WHEN C2 THEN R2
+   . . . 
+  WHEN CN THEN RN
+  ELSE RD
+END
+
+简单的CASE语句
+CASE E0
+  WHEN E1 THEN R1
+  WHEN E2 THEN R2
+   . . . 
+  WHEN EN THEN RN
+  ELSE RD
+END
+在这种情况下，E1~EN的值都是与E0的表达式进行对比。

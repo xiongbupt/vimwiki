@@ -1,0 +1,23 @@
+输入两个连续的>>将会变成下面这种形式，换行。
+<para>
+
+</para>
+
+在输入一个名词之后连续输入两个;;将会将该名词变为也个tag，如下所示：
+<tag1>
+    test
+    line1
+    <tag2>
+        tst  
+</tag2>
+
+</tag1>
+
+
+
+<![CDATA[]]>
+<!-- test-->
+<!-- test-->
+<test>
+    hello world
+</test>

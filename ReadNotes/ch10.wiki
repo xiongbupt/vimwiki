@@ -1,0 +1,47 @@
+%title 流程控制
+由于批处理流程不是都是按照线性的方式运转，需要对流程进行控制。同时，流程之间也不是完全独立，流程之间可能需要对数据进行交互。本章主要涉及这些知识。
+==示例中的详细流程设计==
+主要设计出了一个相对复杂点的流程。
+==深入Job流程==
+对于非线性执行流程，本节主要对其进行介绍。
+===流程转移选择===
+之前的流程流转大部分都仅仅是线性的，仅仅使用了`next`，这仅仅使用了线性流转。
+当添加为`next on`时，可以支持流程的转移，根据`on`的值，可以决定后续的step。
+对于`on`所支持的值，列表如下所示：
+| 值     | 描述                | 示例      |
+| String | exit status的具体指 | COMPLETED |
+| *      | 匹配0至多个字符     |           |
+| ?      | 匹配一个字符        |           |
+
+===batch status与exit status的区别===
+两者容易混淆，其区别如下表所示：
+| Status | 类型                    | 描述 |
+| Batch  | BatchStatus（枚举类型） |      |
+| Exit   | ExitStatus（类）        |      |
+
+ExitStatus类可以包含多种具体含义的字符串，由自己实现。
+
+
+===选择exit status===
+在XML的配置文件中，可以选择`next on`，示例如下所示：
+{{{class="brush:xml"
+<step id="readWrite">
+<tasklet>(...)</tasklet>
+<next on="COMPLETED WITH SKIPS" to="generateReport" />
+<next on="*" to="clean" />
+</step>
+  }}}
+在上述中，exit status为COMPLETED WITH SKIPS，这个状态为自己实现的。实现方式有两种，分别是使用监听器实现和使用Decision实现，下面详细描述。
+* 使用监听器
+* 使用Decision
+
+两种方式均可以实现流程的跳转，在选择上面原则如下
+* step监听器影响元数据
+* 对于Decider而言，后期绑定不可用
+* Decider在流程影响上更明显、直观
+
+==在step之间共享数据==
+共享数据一共有两种方式，分别是上下文和holder。
+===使用上下文共享===
+job和step均有上下文，他们的可见性不一致。step可以看到job的上下文，但是step之间不可看到对方的上下文。
+对于spring batch中的实体，可以很轻易的获取step和job的上下文，但是itemreader、itemprocessor和itemwriter不能轻易获取，若需要获取，需要实现ItemStream接口。

@@ -1,0 +1,273 @@
+=ch5=
+%toc
+%title Reading Data
+支持多种读入源，包括普通文本文件、XML文件、JSON文件以及数据库等。
+==数据读入概念==
+两个接口，分别是ItemReader和ItemStream，其中ItemStream接口允许接口与执行的上下文交互，以便于保存运行状态，以及用来恢复后期的运行。ItemStream中包含三个方法分别是open、update、close。
+==读取普通文本文件==
+对于普通文本文件的读取，spring batch实现的ItemReader接口的类为FlatFileItemReader类，在这个类中，有3个接口与其进行交互，分别是RecordSeparatorPolicy用来确认文件中的记录，确认记录的开始及结束处、LineMapper接口用来从每行中获取数据并转化成对象、LineCallbackHandler接口用来处理每行中的特殊记录，最常用的场景为处理被FlatFileReader跳过的记录。
+
+DefaultLineMapper是默认并且是最常用的实现LineMapper的类。在DefaultLineMapper类中，有两个类与其相关，分别是LineTokenizer接口用来将每行的记录分割成不同的标志区域，以及FieldSetMapper接口，用来通过创建的标志区域来创建对象。
+
+===配置FlatFileReader类===
+FlatFileReader可以配置的属性如下
+| 属性                  | 类型                  | 描述                                     |
+| bufferedReaderFactory | BufferedReaderFactory |                                          |
+| comments              | String[]              | 注释说明，以此开头的记录被忽略           |
+| encoding              | String                | 记录编码，默认为DEFAULT_CHARSET          |
+| lineMapper            | LineMapper<T>         | 从文件记录创建对象                       |
+| linesToSkip           | int                   | 跳过的记录的行数                         |
+| recordSeparatorPolicy | RecordSeparatorPolicy | 记录分割                                 |
+| resource              | Resource              | 输入文件                                 |
+| skippedLinesCallback  | SkippedLinesCallback  | 与linesToSkip属性共同使用                |
+| strict                | boolean               | 当输入文件不存在时，是否报错，默认为true |
+
+其中RecordSeparatorPolicy接口中包含三个方法，分别是isEndOfRecord、postProcess、preProcess。在spring batch中已经实现的类如下所示：
+| 实现类名称                   | 描述                               |
+| SimpleRecordSeparatorPolicy  | 每条记录一行                       |
+| DefaultRecordSeparatorPolicy | 支持行末括号匹配不全以及连续字符串 |
+| JsonRecordSeparatorPolicy    | 支持处理JSON记录                   |
+| SuffixRecordSeparatorPolicy  | 行末有符号表明为行末，默认为分号   |
+
+
+另一个关键的接口是LineMapper接口，spring batch实现了若干个该接口的类，具体信息如下：
+| 类名                               | 类描述                                             |
+| DefaultLineMapper                  | 默认的实现方式                                     |
+| JsonLineMapper                     | 支持JSON                                           |
+| PassThroughLineMapper              | 将原始记录转为字符串而不是对象                     |
+| PatternMatchingCompositeLineMapper | 对多种类型的记录进行处理，对每一行类型，均需要配置 |
+
+===DefualtLineMapper简介===
+最常用的LineMapper实现类为DefaultLineMapper，对于记录的处理该类分为两个步骤，分别是：
+# 通过LineTokenizer接口将行中的记录提取出来；
+# 利用FieldSetMapper接口，将获取的记录创建对象。
+
+===DefualtLineMapper类的使用===
+其中FieldSetMapper接口是通用的，只是从分割的区域中创建对象。但是LineTokenizer接口根据不同的类型会有不同的实现方式，spring batch中内嵌的实现方式如下所示：
+| 实现类                 | 描述                                   |
+| DelimitedLineTokenizer | 通过分割符分割记录。默认使用逗号分割。 |
+| FixedLengthTokenizer   | 通过区域长度分割记录                   |
+
+===提取符号分割的区域===
+# 逗号分隔记录
+{{{ class="brush: xml"
+<bean id="productLineTokenizer" 
+    class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+<property name="delimiter" value=","/>
+<property name="names" value="id,name,description,price"/>
+</bean>
+}}}
+
+# 固定长度记录
+{{{ class="brush: xml"
+<bean id=" productLineTokenizer"
+    class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+<property name="columns" value="1-9,10-35,36-50,51-56"/>
+<property name="names" value="id,name,description,price"/>
+</bean>
+  }}}
+  
+===从分割区域中创建对象===
+FiledSetMapper的实现接口有两个，分别如下：
+| 类名                      | 描述              |
+| BeanWrapperFieldSetMapper | 使用beans中的名称 |
+| PassThroughFieldSetMapper | 不做对象类型转换  |
+
+在使用FieldSetMapper之前，必须先实现对象bean用来接收数据。
+若使用BeanWrapperFieldSetMapper，则在实现了对象bean之后，可以按照下面的方式完成FieldSetMapper的使用。
+{{{ class="brush: xml"
+<bean id="productFieldSetMapper"
+    class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+    <property name="prototypeBeanName" value="product"/>
+</bean>
+
+<bean id="product"
+    class="com.manning.sbia.reading.Product"
+    scope="prototype"
+/>
+}}}
+
+===读取JSON文件===
+===跨越多行的记录===
+===文件中存在不同类型的记录===
+
+==读取XML文件==
+对于Spring batch而言，不是所有的XML解释器均适用，其中DOM(Document Object Model)和SAX(Simple API for XML)两种便不合适。
+
+StaxEventItemReader类实现了Spring batch的ItemReader接口，使用StAX来读取XML文档。StaxEventItemReader的可配置属性如下所示：
+| 属性                    | 描述                                      |
+| fragmentRootElementName | 需要引入的XML元素                         |
+| maxItemCount            | 最大可接收数目                            |
+| resource                | Resource 类型                             |
+| strict                  | 在输入源不存在的情况下,是否报错，默认为假 |
+| unmarshaller            | OXM实现方式                               |
+
+对于StaxEventItemReader而言，最关键的属性为fragmentRootElementName和unmarshaller.
+
+对于Resource类型，内嵌的实现方式如下所示：
+| 类名称                 | 类描述 |
+| UrlResource            |        |
+| ClassPathResource      |        |
+| FileSystemResource     |        |
+| ServletContextResource |        |
+| InputStreamResource    |        |
+| ByteArrayResource      |        |
+
+StaxEventItemReader配置示例：
+{{{ class="brush: xml"
+  <bean id="productItemReader"
+    class="org.springframework.batch.item.xml.StaxEventItemReader">
+    <property name="resource" value="datafile.xml"/>
+    <property name="fragmentRootElementName" value="product"/>
+    <property name="unmarshaller" ref="productMarshaller"/>
+</bean>
+<bean id="productMarshaller"
+    class="org.springframework.oxm.castor.CastorMarshaller">
+    <property name="mappingLocation"
+    value="classpath:/com/manning/sbia/reading/xml/mapping.xml"/>
+</bean>
+
+  }}}
+==读取文件集合==
+对于多文件的组合，MultiResourceReader可以在同一时刻用来处理多个资源。对于MultiResourceReader而言，存在两个属性，分别是：
+# resource 用来配置需要匹配的列表或者模式；
+# delegate 明确目标ResourceAwareItemReaderItemStream，对每个资源进行处理
+
+示例如下：
+{{{ class="brush: xml"
+  <bean id="multiResourceReader"
+class="org.springframework.batch.item.file.MultiResourceItemReader">
+<property name="resources" value="file:/var/data/input/file-*.txt"/>
+<property name="delegate" ref="flatFileItemReader"/>
+</bean>
+<bean id="flatFileItemReader"
+class="org.springframework.batch.item.file.FlatFileItemReader">
+(...)
+</bean>
+  }}}
+
+对于delegate属性而言，其对应的类必须实现ResourceAwareItemReaderItemStream接口。
+
+在默认情况下，spring batch是单线程处理文件，但是spring batch支持并行处理多文件。
+
+==从关系型数据库中获取数据==
+支持两种不同的方式获取数据，分别是JDBC和ORM方式。
+===使用JDBC获取数据===
+Spring batch的数据库支持是建立在Spring的JDBC层之上的，在批处理任务中，需要配置请求参数以及处理结果。同时Spring batch同时也是基于接口RowMapper和接口PreparedStatement
+# 通过游标和JDBC结果获取数据
+Spring batch仅仅发送一次请求，并且通过JDBC分批次获取结果数据。JdbcCursor接口实现了该种方法，其含有的属性如下所示：
+| 属性                       | 描述                                    |
+| dataSource                 | 数据源                                  |
+| driverSupportsAbsolute     | 默认为false                             |
+| fetchSize                  | 分组的大小                              |
+| ignoreWarnings             | 在SQL语句发生异常时，是否忽略。默认为真 |
+| maxRows                    | SELECT语句可获取的最大值                |
+| preparedStatementSetter    | 用于设置SQL语句的参数                   |
+| queryTimeout               | 对于资源的最长等待时间                  |
+| rowMapper                  | ResultSet对象的实例                     |
+| sql                        | 执行的SQL语句                           |
+| useSharedExtendedConnecion | 是否允许数据库连接在多个线程中公用      |
+| verifyCursorPosition       |                                         |
+
+对于需要参数的SQL语句，需要实现preparedStatementSetter.
+
+也可以通过StoredProcedureItemReader类来调度数据库的存储过程，除了上表所列出的参数之外，此类还有另外几个参数，具体的参数列表如下：
+| 类型              | 描述               |
+| function          | 是否为存储过程     |
+| parameters        | 存储过程所需的参数 |
+| procedureName     | 存储过程的名称     |
+| refCursorPosition | 默认值为0          |
+
+示例1
+{{{ class="brush: xml"
+<bean id="reader"
+class="org.springframework.batch.item.database.StoredProcedureItemReader">
+<property name="dataSource" ref="dataSource"/>
+<property name="procedureName" value="sp_product"/> 
+<property name="rowMapper" ref="productRowMapper"/>
+</bean>
+  }}}
+  
+对于调用存储过程的方法，其示例如下所示：
+{{{ class="brush: xml"
+<bean id="reader"
+class="org.springframework.batch.item.database.StoredProcedureItemReader">
+<property name="dataSource" ref="dataSource"/>
+<property name="procedureName" value="sp_product"/>
+<property name="parameters"> 
+<list>
+<bean class="org.springframework.jdbc.core.SqlOutParameter">
+<constructor-arg index="0" value="products"/>
+<constructor-arg index="1">
+<util:constant static-field="oracle.jdbc.OracleTypes.CURSOR"/>
+</constructor-arg>
+</bean>
+</list>
+</property>
+<property name="cursorRefPosition" value="1"/> 
+<property name="rowMapper" ref="productRowMapper"/>
+</bean>
+  }}}
+  
+# 使用PAGING的方式获取数据
+除了使用JDBC管理数据之外，spring batch允许使用paging的方式管理数据。
+实现该方式的类为JdbcPagingItemReader，该类具有的属性如下所示：
+| 类名           | 描述 |
+| dataSource     |      |
+| fetchSize      |      |
+| parameterValue |      |
+| queryProvide   |      |
+| rowMapper      |      |
+| pageSize       |      |
+
+示例如下：
+{{{ class="brush: xml"
+<bean id="productItemReader"
+class="org.springframework.batch.item.database.JdbcPagingItemReader">
+<property name="dataSource" ref="dataSource"/>
+<property name="queryProvider" ref="productQueryProvider"/>
+<property name="pageSize" value="1500"/>
+<property name="rowMapper" ref="productRowMapper"/>
+</bean>
+<bean id="productRowMapper" class=" (...) "/>
+<bean id="productQueryProvider" class=" (...) "/>
+  }}}
+  
+Spring batch提供了一个类用来实现QueryProvide，该类为SqlPagingQueryProviderFactoryBean，其属性如下所示：
+| 属性         | 描述                                 |
+| ascending    | 是否按升序排序，默认为true           |
+| databaseType | 数据库类型                           |
+| dataSource   | 若database类型以及设置，该选项非比输 |
+| fromClause   | FROM语句                             |
+| selectClause | SELECT语句                           |
+| sortKey      | 排序字段                             |
+| whereClaues  | WHERE语句                            |
+
+示例如下：
+{{{ class="brush: xml"
+<bean id=" productQueryProvider"
+    class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="selectClause"
+    value="select id, name, description, price"/>
+    <property name="fromClause" value="from product"/>
+    <property name="sortKey" value="id"/>
+</bean>
+  }}}
+  
+===使用ORM获取数据===
+* 通过ORM游标获取数据
+* 通过分页获取数据
+
+==使用其他输入源==
+===将服务作为输入===
+===从JMS读取===
+
+==实现自定义的读取==
+
+
+FlatFileItemReader -> resource + lineMapper
+
+lineMapper -> (DefaultLineMapper) -> lineTokenizer(org.springframework.batch.item.file.transform.DelimitedLineTokenizer) + fieldSetMapper(自己实现的类)
+
+org.springframework.batch.item.file.transform.DelimitedLineTokenizer -> delimiter + names

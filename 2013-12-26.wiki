@@ -1,0 +1,8 @@
+描述：DB2 sql clob操作报`操作无效，已关闭Lob。errorcode=-4470`
+解决方法：执行下面的语句即可。
+{{{
+class:brush="SQL"
+db2stop force
+db2set DB2_RESTRICT_DDF=true
+db2strat
+}}}

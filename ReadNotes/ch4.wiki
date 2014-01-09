@@ -1,0 +1,59 @@
+=加载的概念=
+核心的接口为JobLauncher，其中JobLauncher和Job参数通过Spring的bean来指定，而JobParameters可以在运行时再进行指定。
+其中JobParametersBuilder可以用来构建JobParameters实例。JobParameters支持四种不同类型的参数，分别为String、Date、Double和Long。
+
+JobException提供了用于查询执行状态的接口。
+
+==同步VS异步==
+在默认情况下，JobLauncher的默认加载方式为同步加载，因此调用者必须等待结果返回才能继续操作。异步加载则仅仅通过JobException返回一个运行状态即可，调用端不需等待被调用端完成工作。为了让JobLauncher可以异步被调用，需要给它提供一个合适的TaskExecutor。默认情况下，TaskExecutor是在task命名空间下的，如果需要使用其他的bean，只需要实现ThreadPoolTaskExecutor即可。
+
+根据加载的特征来选择加载方式：
+* 加载频率
+* 需要加载的批处理数量
+* 触发事件的特征
+* 工作持续的时间
+
+==加载方式概览==
+* 命令行方式加载（通过cron或者手工敲命令）；
+* 经spring batch和调度器嵌在Web容器中；
+* 通过HTTP的方式调用spring batch的工作。
+
+
+mvn package打包
+mvn dependency:copy-dependencies 创建包的依赖关系
+
+===命令行的方式加载===
+CommandLineJobRunner，可以通过命令行通过java的方式调用该类完成任务调度。该种方式可以加载参数也可以不加载参数。
+
+对于加载参数的调用，参数的类型可以包括四种。
+
+通过实现ExitCodeMapper接口，可以完成退出状态的映射。对于该类的调用，仅仅需要在xml文件中添加<bean class="实现ExitCodeMapper接口的类">即可。CommandLineJobRunner将会自动加载该类完成接口的映射。
+
+实现ExitCodeMapper的接口的类的状态映射需要通过step的级别中添加监听器实现？
+
+==任务调度器==
+| 调度器类型       | 特点                                                    |
+| cron             | 基于UNIX平台，通过cron脚本定期执行命令或脚本            |
+| Spring scheduler | 通过XML文件配置，支持cron的表达式，在Spring 3.0之后添加 |
+
+===cron使用===
+通过使用crontab来完成cron脚本的配置，最终完成cron的调用。此部分的语法详情需要参照cron的书写。
+===使用Spring scheduler===
+使用Spring scheduler需要按照下面的步骤进行：
+# 设置调度器
+# 设置周期调用方法，可以通过XML文件或者通过注解的方式
+
+<task:scheduler id="scheduler" pool-size="10">
+默认情况的线程池大小为1，通过该设置可以修改线程池的大小。
+
+=通过Web程序调用=
+可以将Spring batch嵌入到Web程序中。
+==将Spring batch嵌入到Web程序中==
+在web.xml文件中添加一个servlet的监听类：ContextLoaderListener。
+在默认情况下，ContextLoaderListener使用的默认配置文件为WEB-INF文件夹下名为applicationContext.xml的文件，在该文件中需要包含infrastructure(基本架构)、jobs（工作）、scheduler（调度器若存在）、application（程序），为了便于扩展和重用，将这几个部分分别写为不同的文件，在applicationContext中import进来。
+==通过HTTP请求启动任务==
+
+==停止任务==
+===操作人员停止===
+===开发人员停止===
+

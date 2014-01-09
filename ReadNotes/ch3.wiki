@@ -1,0 +1,60 @@
+==事务控制==
+isolation隔离级别的值可以为下面的值
+* READ_COMMITTED 读取已经提交的值,可以防止脏数据
+* READ_UNCOMMITTED 读取实时的值,可能读取脏数据、中间数据等，无法保证两次的读取一致
+* REPEATABLE_READ 可以保证可重复读取，但是还是可能会获取脏数据
+* SERIALIZABLE 保证数据读取的一致性
+* DEFAULT 将隔离级别交由数据库进行处理，对大多数情况这是一个不错的选择。
+
+progation定义事务的行为
+* REQUIRED 表明进程将会使用当前事务作为控制，当当前事务不存在时，将会新建一个事务
+
+timeout定义超时时间，若未设置，使用系统默认的超时时间
+
+springbatch支持不回滚操作异常的设置
+
+=JobRepository=
+所有与job相关的信息最终存储在JobRepository中
+==选择JobRepository==
+JobRepository是一个接口，springbatch中仅仅只有一个类实现了该接口，该类为SimpleJobRepository。
+有两种方式可以存储数据，分别是在内存中和在数据库中。
+==设置JobRepository参数==
+* 内存数据库设置，两个类，分别是MapJobRepositoryFactoryBean和ResourcelessTransactionManager，分别用来设置JobRepository和TransactionManager。
+* 可持久化数据库设置
+| 数据值                     | 说明                                               |
+| data-source                | 定义数据源，必须的，默认为dataSource               |
+| transaction-manager        | 事务控制器，必须的，默认值为transactionManager     |
+| isolation-level-for-create | 创建执行任务的隔离层次，必须，默认值为SERIALIZABLE |
+| max-varchar-length         | 数据库中varchar列的最大值                          |
+| table-prefix               | 数据库中表的前缀，默认值为BATCH_                   |
+| lob-handler                | 对于LOB数据的处理方式，仅仅在Oracle数据库时使用    |
+
+JobRepository可以用来进行同步设置
+依赖数据库实现。
+
+=高级设置=
+spring batch与spring expression language兼容
+==step scope==
+与spring expression language结合，可以在运行时确定参数
+==listeners==
+提供job、step、item的监听器，可以在job、step、item运行时进行监听，对同一个任务，允许存在多个监听器。
+
+JobExecutionListener接口有两个方法，分别是beforeJob和afterJob。
+可以采用注解的方式在Java代码中注入，不必实现JobExecutionListener。
+
+step的listeners包括：
+| 类型                  | 说明                    |
+| ChunkListener         | 在chunk发生前和后被调用 |
+| ItemProcessListener   |                         |
+| ItemReadListener      |                         |
+| ItemWriteListener     |                         |
+| SkipListerer          |                         |
+| StepExecutionListener |                         |
+
+重复和重试监听器（RepeateListener和RetryListener）
+
+=配置继承=
+配置可以继承
+
+通过使用merge属性，可以在子类和父类中同时拥有某个属性，默认为子类覆盖父类。
+

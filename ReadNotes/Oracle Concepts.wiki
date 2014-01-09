@@ -1,0 +1,105 @@
+%title Oracle Concepts
+=表以及表簇=
+数据库的基本单元（schema）对于每个用户都拥有且只有唯一的一个，其名称与相应的用户名一致。
+==Schema对象类型==
+Oracle数据库允许多种不同的Schema类型，这些类型包括
+* 索引（Index）
+* 分区（Partitions）
+* 视图（Views）
+* 序列（Sequence）
+* Dimensions(层次查询)
+* Synonyms
+* PL/SQL中的子程序和包
+
+其他的一些对象伴随着数据库的建立而建立，但是这些对象是存储在数据库中的，而没有存储在Schema中，这些对象包括数据库用户（users）、角色（roles）、上下文（contexts）、文件夹对象（directory
+objects）
+==Schema存储空间==
+    
+==Schema对象依赖关系==
+Oracle提供了Schema对象依赖关系的解决。当Schema对象依赖的Schema对象或者表等发生了改变时，该Scehma将会变的不可用，需要重新编译才可以继续使用。
+{{{class="brush: sql"
+--创建表
+create table test_table (col1 INTEGER, col2 INTEGER);
+--创建过程
+create or replace procedure test_proc
+    as
+    begin
+    for x in( select col1, col2 from test_table)
+    --process data
+        null;
+    end loop;
+end;
+--查看状态
+select object_name, status from user_objects where object_name = 'TEST_PROC';
+--增加列
+alter table test_table add col3 number;
+--查看状态
+select object_name, status from user_objects where object_name = 'TEST_PROC';
+--调整列的值
+alter table test_table modify col1 varchar2(20);
+--查看状态
+select object_name, status from user_objects where object_name = 'TEST_PROC';
+  }}}
+==SYS和SYSTEM级别的Schema== 
+当数据库被创建时，SYS用户自动被添加，该用户可以执行所有的管理功能。SYSTEM用户也是在数据库被创建时自动添加的。
+==Table(表格)概要==
+在Oracle中，表可以分为下面几类：
+# 关系表
+# 对象表
+
+对于关系表，可以有如下几种构建方式，分别如下：
+# 以堆为原型的创建方式，此种方式为默认方式；
+# 基于索引的创建方式，该种方式在某些应用中可以提高性能，同时也需要使用更多的磁盘空间；
+# 外建表，这种表的元数据存储在表中，但是表中的数据存储在其他地方，该表是一个只读表。
+
+表根据其存在时间的长短，可以分为长期表和临时表，临时表一般仅仅在交易或者会话的过程中存在，交易结束之后，该表中的数据即消失。
+
+{{{ class="brush: sql"
+create table employees
+    ( employee_id number(6),
+      first_name varchar2(20),
+      last_name varchar2(20) 
+      CONSTRAINT emp_last_name not null,
+      email varchar2(25)
+      CONSTRAINT emp_email_nn not null,
+      phone_number varchar2(20),
+      hire_date DATE
+      CONSTRAINT emp_hire_date_nn not null,
+      job_id varchar2(20)
+      CONSTRAINT emp_job_nn not null,
+      salary number(8,2),
+      commission_pct number(8,2),
+      department_id number(4),
+      CONSTRAINT emp_salary_min 
+      CHECK(salary > 0),
+      CONSTRAINT emp_email_uk
+      UNIQUE(email)
+        );
+  }}}
+  在创建完表之后，可以使用`ALTER`对表格进行重新操作，完成相应的设置，如添加主键、外键、建立索引等，下例演示了`ALTER`的使用。
+{{{class="brush: sql"
+alter table employees 
+    add (CONSTRAINT emp_emp_id_pk
+            PRIMARY KEY(employee_id),
+            CONSTRAINT emp_dept_fk
+            FOREIGN KEY(department_id)
+            REFERENCES deparments,
+            CONSTRAINT emp_job_fk
+            FOREIGN KEY (job_id)
+            REFERENCES jobs(job_id),
+            CONSTRAINT emp_manager_fk
+            FOREIGN KEY (manager_id)
+            REFERENCES employees
+            );
+  }}}
+
+==Oracle数据类型==
+Oracle内置的数据类型可以分为下面几类：
+* 数字
+* 字符
+* 日期
+* ROWid数据类型
+* 有固定格式的数据类型
+其他重要的数据类型包括raw、LOBs（large objects)以及集合。
+===字符类型===
+

@@ -1,0 +1,7 @@
+mvn dependency:sources
+mvn dependency:resolve -Dclassifier=javadoc
+
+ 第一个命令去取所有在POM中的的source code,第二个去取Javadocs
+
+maven执行springbatch相关命令的方式：
+mvn exec:java -Dexec.mainClass="org.springframework.batch.core.launch.support.CommandLineJobRunner" -Dexec.args="job-context.xml importProducts inputResource=classpath:/input/products.zip targetDirectory=./target/importproductsbatch/ targetFile=products.txt" -Dexec.classpathScope="test"
